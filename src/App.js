@@ -5,6 +5,7 @@ import Chart from './componentes/chart.js'
 import Fecha from './componentes/fecha.js'
 import BtnExport from './componentes/btn-export';
 import Tabla from './componentes/tabla';
+import TablaSemestre from './componentes/tablaSemestre';
 import {Tabs, Tab} from 'react-bootstrap-tabs';
 import ToolTipPosition from "./componentes/ToolTipPositions";
 import SelectGrafica from "./componentes/selectForGrafica";
@@ -45,7 +46,15 @@ class App extends Component {
             conceptos : [], //usado para saber que checkboxes son marcados
             todosConceptos : [], //usado para saber todos los conceptos que hay en la BD en otro tipo formato de dato
             usuario : '', //usado para la sesion del usuario
-            listaConceptosEncontrados : "" //usado para saber que conceptos se encontraron en la consulta
+            listaConceptosEncontrados : "", //usado para saber que conceptos se encontraron en la consulta
+            periodo : "I", //usado para seleccionar el periodo del semestre I, II
+            anioSemestre : "2015", //año del semestre
+            isfechaDisable : false,
+            isMesDisable : false,
+            isAnioDisable : false,
+            isSelectSemestre: false,
+            tableProgramasData: {}, //usado para dar datos a la tabla
+            isTableProgramasLoaded: false //usado para mostrar la tabla
         };
         //TODOS SON LOS BIND DE LAS FUNCIONES DE CHANGE...
         this.handleChangeFechaInicio = this.handleChangeFechaInicio.bind(this);
@@ -69,6 +78,10 @@ class App extends Component {
         this.conceptosChanged = this.conceptosChanged.bind(this);
         this.ningunoChanged = this.ningunoChanged.bind(this);
         this.todosChanged = this.todosChanged.bind(this);
+        this.handleChangePeriodo = this.handleChangePeriodo.bind(this);
+        this.handleChangAnioSemestre = this.handleChangAnioSemestre.bind(this);
+        this.desactivarFiltros = this.desactivarFiltros.bind(this);
+        this.activarFiltros = this.activarFiltros.bind(this);
     }
 
     conceptosChanged = (newConceptos) => { // actualiza el atributo de la funcion
@@ -156,7 +169,16 @@ class App extends Component {
             anio: event.target.value
         });
     }
-
+    handleChangePeriodo(event){  // cambiar periodo de semestre por año seleccionado
+        this.setState({
+            periodo: event.target.value
+        });
+    }
+    handleChangAnioSemestre(event) {  // cambiar año para los meses inicial y final
+        this.setState({
+            anioSemestre: event.target.value
+        });
+    }
     handleChangeMesIni(event) { // cambiar mes inicial si es uqe no es mayor a mes final
         //console.log("VALOR = " +event.target.value);
         if(parseInt(event.target.value,0) < parseInt(this.state.mesfin,0)){
@@ -226,6 +248,12 @@ class App extends Component {
     }
 
     handleChangeInfoType(event){ // cambiar tipo de informacion : importes o operaciones
+        
+        if(event.target.value === "programas_x_semestre"){
+            this.desactivarFiltros();
+        }else{
+            this.activarFiltros();
+        }
         if(this.state.infoType === "operaciones"){
             this.setState({
                 prefijo : "S/"
@@ -252,6 +280,22 @@ class App extends Component {
         });
     }
 
+    desactivarFiltros(){
+        this.setState({
+            isfechaDisable : true,
+            isMesDisable : true,
+            isAnioDisable : true,
+            opcion : "semestre"
+        });
+    }
+    activarFiltros(){
+        this.setState({
+            isfechaDisable : false,
+            isMesDisable : false,
+            isAnioDisable : false,
+            opcion : "fecha"
+        });
+    }
     retornarMes(mes){ // retorna el mes escogido sea inicial o final usado para el subtitulo de numero -> a nombre del mes
         var cadenames = "";
         if(mes === "1"){
@@ -296,9 +340,10 @@ class App extends Component {
     componentDidMount(){ // usado en react para montar todo antes del render
 
         const search = window.location.search.substring(1);
-        var urlChart = 'https://back-estadisticas.herokuapp.com/apiController/importe?inicio='+this.state.fechaInicio+'&fin='+this.state.fechaFin+'&conceptos='+this.state.listaConceptos;//pone el dominio para obtener la informacion del ChartFusion
-        var urlTable = 'https://back-estadisticas.herokuapp.com/ApiController/tablaFechas/?inicio='+this.state.fechaInicio+'&fin='+this.state.fechaFin+'&conceptos='+this.state.listaConceptos;//pone el dominio para obtener la informacion de la tabla
-        var urlConceptos = 'https://back-estadisticas.herokuapp.com/apiController/listaConceptos';//pone el dominio para obtener la lista de los conceptos
+        var urlChart = 'https://backend-estadisticas-portal.herokuapp.com/apiController/importe?inicio='+this.state.fechaInicio+'&fin='+this.state.fechaFin+'&conceptos='+this.state.listaConceptos;//pone el dominio para obtener la informacion del ChartFusion
+        var urlTable = 'https://backend-estadisticas-portal.herokuapp.com/ApiController/tablaFechas/?inicio='+this.state.fechaInicio+'&fin='+this.state.fechaFin+'&conceptos='+this.state.listaConceptos;//pone el dominio para obtener la informacion de la tabla
+        var urlTableProgramas  = 'https://backend-estadisticas-portal.herokuapp.com/ApiController/tablaSemestre/?conceptos='+this.state.listaConceptos+'&anio='+this.state.anioSemestre+'&periodo='+this.state.periodo;//pone el dominio para obtener la informacion de las tablas      
+        var urlConceptos = 'https://backend-estadisticas-portal.herokuapp.com/apiController/listaConceptos';//pone el dominio para obtener la lista de los conceptos
 
         this.getConceptsData(encodeURI(urlConceptos));//hace el llamado al dominio donde retornara respuesta de la funcion
         this.getChartData(encodeURI(urlChart));//hace el llamado al dominio donde retornara respuesta de la funcion
@@ -307,6 +352,7 @@ class App extends Component {
                 usuario: JSON.parse('{"' + search.replace(/&/g, '","').replace(/=/g,'":"') + '"}', function(key, value) { return key===""?value:decodeURIComponent(value) }).nombre
             }, function(){
                 this.getTableData(encodeURI(urlTable));//hace el llamado al dominio donde retornara respuesta de la funcion
+                this.getTableProgramasData(encodeURI(urlTableProgramas));
             });
         }
     }
@@ -317,17 +363,19 @@ class App extends Component {
         //console.log(this.state.listaConceptosEncontrados.substring(0, this.state.listaConceptosEncontrados.length - 2));
         var urlChart = '';//pone el dominio vacio al comienzo para obtener la informacion del ChartFusion
         var urlTable = '';//pone el dominio vacion al comienzo para obtener la informacion del ChartFusion
+        var urlTableProgramas = '';
         this.setState({
             isTableLoaded: false,
+            isTableProgramasLoaded: false,
             isUsed: true,
             listaConceptosEncontrados : "",
             subtitulo : ""
         });
-        var urlConceptos = 'https://back-estadisticas.herokuapp.com/apiController/listaConceptos';//pone el dominio para obtener la informacion de los conceptos
+        var urlConceptos = 'https://backend-estadisticas-portal.herokuapp.com/apiController/listaConceptos';//pone el dominio para obtener la informacion de los conceptos
         if(this.state.opcion === 'fecha'){
-            urlTable = 'https://back-estadisticas.herokuapp.com/ApiController/tablaFechas/?inicio='+this.state.fechaInicio+'&fin='+this.state.fechaFin+'&conceptos='+listaFinal;//pone el dominio para obtener la informacion de las tablas
+            urlTable = 'https://backend-estadisticas-portal.herokuapp.com/ApiController/tablaFechas/?inicio='+this.state.fechaInicio+'&fin='+this.state.fechaFin+'&conceptos='+listaFinal;//pone el dominio para obtener la informacion de las tablas
             if(this.state.infoType === "operaciones"){
-                urlChart = 'https://back-estadisticas.herokuapp.com/apiController/?inicio='+this.state.fechaInicio+'&fin='+this.state.fechaFin+'&conceptos='+listaFinal;//pone el dominio para obtener la informacion del ChartFusion
+                urlChart = 'https://backend-estadisticas-portal.herokuapp.com/apiController/?inicio='+this.state.fechaInicio+'&fin='+this.state.fechaFin+'&conceptos='+listaFinal;//pone el dominio para obtener la informacion del ChartFusion
                 var fi = new Date(this.state.fechaInicio*1000);
                 var ff = new Date(this.state.fechaFin*1000);
                 this.setState({
@@ -347,7 +395,7 @@ class App extends Component {
                 });
             }
             else{
-                urlChart = 'https://back-estadisticas.herokuapp.com/apiController/importe?inicio='+this.state.fechaInicio+'&fin='+this.state.fechaFin+'&conceptos='+listaFinal;//pone el dominio para obtener la informacion del ChartFusion
+                urlChart = 'https://backend-estadisticas-portal.herokuapp.com/apiController/importe?inicio='+this.state.fechaInicio+'&fin='+this.state.fechaFin+'&conceptos='+listaFinal;//pone el dominio para obtener la informacion del ChartFusion
                 fi = new Date(this.state.fechaInicio*1000);
                 ff = new Date(this.state.fechaFin*1000);
                 this.setState({
@@ -368,9 +416,9 @@ class App extends Component {
             }
         }
         else if(this.state.opcion === 'months'){
-            urlTable = 'https://back-estadisticas.herokuapp.com/ApiController/tablaMonth/?year='+this.state.anio+'&mes_inicio='+this.state.mesini+'&mes_fin='+this.state.mesfin+'&conceptos='+listaFinal;//pone el dominio para obtener la informacion de la tabla
+            urlTable = 'https://backend-estadisticas-portal.herokuapp.com/ApiController/tablaMonth/?year='+this.state.anio+'&mes_inicio='+this.state.mesini+'&mes_fin='+this.state.mesfin+'&conceptos='+listaFinal;//pone el dominio para obtener la informacion de la tabla
             if(this.state.infoType === "operaciones"){
-                urlChart = 'https://back-estadisticas.herokuapp.com/apiController/cantidadPorPeriodoMes?year='+this.state.anio+'&mes_inicio='+this.state.mesini+'&mes_fin='+this.state.mesfin+'&conceptos='+listaFinal;//pone el dominio para obtener la informacion del ChartFusion
+                urlChart = 'https://backend-estadisticas-portal.herokuapp.com/apiController/cantidadPorPeriodoMes?year='+this.state.anio+'&mes_inicio='+this.state.mesini+'&mes_fin='+this.state.mesfin+'&conceptos='+listaFinal;//pone el dominio para obtener la informacion del ChartFusion
                 this.setState({
                     isChartLoaded : false,
                     titulo: 'REPORTE ESTADISTICO POR NUMERO DE OPERACIONES'
@@ -387,7 +435,7 @@ class App extends Component {
                 }
             }
             else{
-                urlChart = 'https://back-estadisticas.herokuapp.com/apiController/totalPorPeriodoMes/?year='+this.state.anio+'&mes_inicio='+this.state.mesini+'&mes_fin='+this.state.mesfin+'&conceptos='+listaFinal;//pone el dominio para obtener la informacion del ChartFusion
+                urlChart = 'https://backend-estadisticas-portal.herokuapp.com/apiController/totalPorPeriodoMes/?year='+this.state.anio+'&mes_inicio='+this.state.mesini+'&mes_fin='+this.state.mesfin+'&conceptos='+listaFinal;//pone el dominio para obtener la informacion del ChartFusion
                 this.setState({
                     isChartLoaded : false,
                     titulo: 'REPORTE ESTADISTICO POR IMPORTES'
@@ -403,10 +451,10 @@ class App extends Component {
                     });
                 }
             }
-        }else{
-            urlTable = 'https://back-estadisticas.herokuapp.com/ApiController/tablaYear/?year_inicio='+this.state.anioini+'&year_fin='+this.state.aniofin+'&conceptos='+listaFinal;//pone el dominio para obtener la informacion de la tabla
+        }else if(this.state.opcion === 'years'){
+            urlTable = 'https://backend-estadisticas-portal.herokuapp.com/ApiController/tablaYear/?year_inicio='+this.state.anioini+'&year_fin='+this.state.aniofin+'&conceptos='+listaFinal;//pone el dominio para obtener la informacion de la tabla
             if(this.state.infoType === "operaciones"){
-                urlChart = 'https://back-estadisticas.herokuapp.com/apiController/cantidadPorPeriodoAnio?year_inicio='+this.state.anioini+'&year_fin='+this.state.aniofin+'&conceptos='+listaFinal;//pone el dominio para obtener la informacion del ChartFusion
+                urlChart = 'https://backend-estadisticas-portal.herokuapp.com/apiController/cantidadPorPeriodoAnio?year_inicio='+this.state.anioini+'&year_fin='+this.state.aniofin+'&conceptos='+listaFinal;//pone el dominio para obtener la informacion del ChartFusion
                 this.setState({
                     isChartLoaded : false,
                     titulo: 'REPORTE ESTADISTICO POR NUMERO DE OPERACIONES'
@@ -426,7 +474,7 @@ class App extends Component {
                 }
             }
             else{
-                urlChart = 'https://back-estadisticas.herokuapp.com/apiController/montoPorPeriodoAnio/?year_inicio='+this.state.anioini+'&year_fin='+this.state.aniofin+'&conceptos='+listaFinal;//pone el dominio para obtener la informacion del ChartFusion
+                urlChart = 'https://backend-estadisticas-portal.herokuapp.com/apiController/montoPorPeriodoAnio/?year_inicio='+this.state.anioini+'&year_fin='+this.state.aniofin+'&conceptos='+listaFinal;//pone el dominio para obtener la informacion del ChartFusion
                 this.setState({
                     isChartLoaded : false,
                     titulo: 'REPORTE ESTADISTICO POR IMPORTES'
@@ -444,6 +492,70 @@ class App extends Component {
                         this.state.aniofin ) /*+  "<br/> CONCEPTOS : " + this.state.listaConceptosEncontrados.substring(0, this.state.listaConceptosEncontrados.length - 2)*/)
                     });
                 }
+            }
+        }else if(this.state.opcion === 'semestre'){
+            urlTable = 'https://backend-estadisticas-portal.herokuapp.com/ApiController/tablaFechas/?inicio='+this.state.fechaInicio+'&fin='+this.state.fechaFin+'&conceptos='+listaFinal;//pone el dominio para obtener la informacion de las tablas
+            if(this.state.infoType === "operaciones"){
+                urlChart = 'https://backend-estadisticas-portal.herokuapp.com/apiController/?inicio='+this.state.fechaInicio+'&fin='+this.state.fechaFin+'&conceptos='+listaFinal;//pone el dominio para obtener la informacion del ChartFusion
+                var fi = new Date(this.state.fechaInicio*1000);
+                var ff = new Date(this.state.fechaFin*1000);
+                this.setState({
+                    isChartLoaded : false,
+                    titulo: 'REPORTE ESTADISTICO POR NUMERO DE OPERACIONES'
+                });
+                this.getChartData(encodeURI(urlChart));//hace el llamado al dominio donde retornara respuesta de la funcion
+                this.setState({
+                    subtitulo : (("DEL "+
+                    (fi.getUTCDate()<=9 ? ("0"+fi.getUTCDate()) : (fi.getUTCDate()))
+                    +"/"+(fi.getUTCDate()<=8 ? ("0"+(fi.getUTCMonth()+1)) : (fi.getUTCMonth()+1))
+                    +"/"+fi.getUTCFullYear()
+                    +" AL "+
+                    (ff.getUTCDate()<=9 ? ("0"+ff.getUTCDate()) : (ff.getUTCDate()))
+                    +"/"+(ff.getUTCDate()<=8 ? ("0"+(ff.getUTCMonth()+1)) : (ff.getUTCMonth()+1))
+                    +"/"+ff.getUTCFullYear()) +  "<br/> CONCEPTOS : " + this.state.listaConceptosEncontrados.substring(0, this.state.listaConceptosEncontrados.length - 2))
+                });
+            }
+            else if(this.state.infoType === "importes"){
+                urlChart = 'https://backend-estadisticas-portal.herokuapp.com/apiController/importe?inicio='+this.state.fechaInicio+'&fin='+this.state.fechaFin+'&conceptos='+listaFinal;//pone el dominio para obtener la informacion del ChartFusion
+                fi = new Date(this.state.fechaInicio*1000);
+                ff = new Date(this.state.fechaFin*1000);
+                this.setState({
+                    isChartLoaded : false,
+                    titulo: 'REPORTE ESTADISTICO POR NUMERO DE IMPORTES'
+                });
+                this.getChartData(encodeURI(urlChart));//hace el llamado al dominio donde retornara respuesta de la funcion
+                this.setState({
+                    subtitulo : (("DEL "+
+                    (fi.getUTCDate()<=9 ? ("0"+fi.getUTCDate()) : (fi.getUTCDate()))
+                    +"/"+(fi.getUTCDate()<=8 ? ("0"+(fi.getUTCMonth()+1)) : (fi.getUTCMonth()+1))
+                    +"/"+fi.getUTCFullYear()
+                    +" AL "+
+                    (ff.getUTCDate()<=9 ? ("0"+ff.getUTCDate()) : (ff.getUTCDate()))
+                    +"/"+(ff.getUTCDate()<=8 ? ("0"+(ff.getUTCMonth()+1)) : (ff.getUTCMonth()+1))
+                    +"/"+ff.getUTCFullYear()) +  "<br/> CONCEPTOS : " + this.state.listaConceptosEncontrados.substring(0, this.state.listaConceptosEncontrados.length - 2))
+                });
+            }
+            else if(this.state.infoType === "programas_x_semestre"){
+                var ciclo = this.state.anioSemestre+"-"+this.state.periodo;
+                var cicloForma = "";
+                if(this.state.periodo === "I") cicloForma = this.state.anioSemestre+"-1";
+                else if(this.state.periodo === "II") cicloForma = this.state.anioSemestre+"-2";
+
+                urlChart = 'https://backend-estadisticas-portal.herokuapp.com/apiController/importe?inicio='+this.state.fechaInicio+'&fin='+this.state.fechaFin+'&conceptos='+listaFinal;//pone el dominio para obtener la informacion del ChartFusion
+                urlTableProgramas  = 'https://backend-estadisticas-portal.herokuapp.com/ApiController/tablaSemestre/?conceptos='+listaFinal+'&ciclo='+ciclo+'&cicloForma='+cicloForma;//pone el dominio para obtener la informacion de las tablas
+                console.log(ciclo+"/"+cicloForma);
+                //fi = new Date(this.state.fechaInicio*1000);
+                //ff = new Date(this.state.fechaFin*1000);
+                this.setState({
+                    isChartLoaded : false,
+                    titulo: 'REPORTE ESTADISTICO POR PROGRAMAS DE SEMESTRE'
+                });
+                this.getChartData(encodeURI(urlChart));//hace el llamado al dominio donde retornara respuesta de la funcion
+                this.setState({
+                    subtitulo : (("SEMESTRE: "+ this.state.anioSemestre+" - "+this.state.periodo)
+                    +  "<br/> CONCEPTOS : " + this.state.listaConceptosEncontrados.substring(0, this.state.listaConceptosEncontrados.length - 2))
+                });
+                this.getTableProgramasData(encodeURI(urlTableProgramas));
             }
         }
         this.getTableData(encodeURI(urlTable));//hace el llamado al dominio donde retornara respuesta de la funcion
@@ -522,13 +634,27 @@ class App extends Component {
                 return response.json();
             })
             .then((result) => {
+                console.log(result);
                 this.setState({
                     tableData: result,
                     isTableLoaded: true
                 });
             })
     }
-
+    getTableProgramasData(urlTableProgramas) {// obtiene los datos para la tabla de la misma forma que el chartData ahora para los tableData. pone isTableLoaded->true renderizando el componente otra vez
+        fetch(urlTableProgramas)//hace el llamado al dominio enviado como parámetro donde retornara respuesta de la funcion
+            .then((response) => {
+                return response.json();
+            })
+            .then((result) => {
+                console.log(result);
+                this.setState({
+                    tableProgramasData: result,
+                    isTableProgramasLoaded: true
+                });
+            })
+        
+    }
     onClickPreventDefault(e) {
         e.preventDefault();
     }
@@ -549,8 +675,8 @@ class App extends Component {
             +"/"+(ff.getUTCDate()<=8 ? ("0"+(ff.getUTCMonth()+1)) : (ff.getUTCMonth()+1))
             +"/"+ff.getUTCFullYear())
         });
-        this.getChartData('https://back-estadisticas.herokuapp.com/apiController/importe/?inicio='+this.state.fechaInicio+'&fin='+this.state.fechaFin);//hace el llamado al dominio donde retornara respuesta de la funcion
-        this.getTableData('https://back-estadisticas.herokuapp.com/ApiController/tablaFechas/?inicio='+this.state.fechaInicio+'&fin='+this.state.fechaFin);//hace el llamado al dominio donde retornara respuesta de la funcion
+        this.getChartData('https://backend-estadisticas-portal.herokuapp.com/apiController/importe/?inicio='+this.state.fechaInicio+'&fin='+this.state.fechaFin);//hace el llamado al dominio donde retornara respuesta de la funcion
+        this.getTableData('https://backend-estadisticas-portal.herokuapp.com/ApiController/tablaFechas/?inicio='+this.state.fechaInicio+'&fin='+this.state.fechaFin);//hace el llamado al dominio donde retornara respuesta de la funcion
     }
 
     submitYearFunction(){
@@ -559,14 +685,15 @@ class App extends Component {
             isTableLoaded : false,
             titulo : ("IMPORTES DE LOS MESES DEL AÑO " + this.state.anio)
         });
-        this.getChartData('https://back-estadisticas.herokuapp.com/apiController/devolverAnioImporte/?year='+this.state.anio);//hace el llamado al dominio donde retornara respuesta de la funcion
-        this.getTableData('https://back-estadisticas.herokuapp.com/ApiController/tablaYear/?year='+this.state.anio);//hace el llamado al dominio donde retornara respuesta de la funcion
+        this.getChartData('https://backend-estadisticas-portal.herokuapp.com/apiController/devolverAnioImporte/?year='+this.state.anio);//hace el llamado al dominio donde retornara respuesta de la funcion
+        this.getTableData('https://backend-estadisticas-portal.herokuapp.com/ApiController/tablaYear/?year='+this.state.anio);//hace el llamado al dominio donde retornara respuesta de la funcion
     }
 
     render() { // render  del modulo estadistico
 
         const op = this.state.opcion;
         const listaFinal = this.revisarConceptos();
+        const opReporte = this.state.infoType;
         //console.log(this.state.listaConceptosEncontrados);
         return (
             <div style={{
@@ -595,12 +722,24 @@ class App extends Component {
                                                     />)
                                                     :(<button className="btn btn-info btn-block" disabled>Escoger conceptos</button>)}
                                             </div>
+                                            <hr></hr>
+                                            <div className="form-group">
+                                                <label>Tipo de reportes:</label>
+                                                <select className="form-control" value={this.state.infoType} onChange={this.handleChangeInfoType}>
+                                                    <option value="importes">Importes</option>
+                                                    <option value="operaciones">Numero de operaciones</option>
+                                                    <option value="programas_x_semestre">Programas por semestre</option>
+                                                </select>
+                                            </div>
+                                            <hr></hr>
+
                                             <div className="form-group">
                                                 <label>Filtro:</label>
                                                 <select className="form-control" value={this.state.opcion} onChange={this.handleChangeOpcion}>
-                                                    <option value="fecha">FECHA A FECHA</option>
-                                                    <option value="months">MES A MES</option>
-                                                    <option value="years">AÑO A AÑO</option>
+                                                    <option value="fecha" disabled={this.state.isfechaDisable}>FECHA A FECHA</option>
+                                                    <option value="months" disabled={this.state.isMesDisable}>MES A MES</option>
+                                                    <option value="years" disabled={this.state.isAnioDisable}>AÑO A AÑO</option>
+                                                    <option value="semestre" >POR SEMESTRE</option>
                                                 </select>
                                             </div>
                                             <hr></hr>
@@ -641,13 +780,23 @@ class App extends Component {
                                                     </div>
                                                 </div>
                                             ) : (null)}
-                                            <div className="form-group">
-                                                <label>Tipo de datos:</label>
-                                                <select className="form-control" value={this.state.infoType} onChange={this.handleChangeInfoType}>
-                                                    <option value="importes">Importes</option>
-                                                    <option value="operaciones">Numero de operaciones</option>
-                                                </select>
-                                            </div>
+
+                                            {op === 'semestre' ? (
+                                                <div>
+                                                     <div className="form-group">
+                                                        <SelectYear titulo="Año:" anio={this.state.anioSemestre} cambiar={this.handleChangAnioSemestre} />
+                                                    </div>
+                                                    <div className="form-group">
+                                                        <div>
+                                                        <label>Periodo:</label>
+                                                        </div>
+                                                        <select className="form-control" value={this.state.periodo} onChange={this.handleChangePeriodo}>
+                                                            <option value="I">I</option>
+                                                            <option value="II">II</option>
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                            ):(null)}
                                         </form>
                                         </div>
                                     </Tab>
@@ -709,6 +858,23 @@ class App extends Component {
                                             }
                                             {(!this.state.isTableLoaded && !this.state.isUsed)?
                                                 (null):(null)
+                                            }
+                                        </Tab>
+                                        <Tab label="Programas">
+                                            {(this.state.isTableProgramasLoaded && this.state.isUsed) ?
+                                                (<TablaSemestre
+                                                    tableProgramasData={this.state.tableProgramasData} />)
+                                                :(null)
+                                            }
+                                            {(!this.state.isTableLoaded && this.state.isUsed)?
+                                                (<div className="App-logo"><br></br><br></br><br></br><br></br>
+                                                                            <br></br><br></br><br></br><br></br>
+                                                                            <br></br><br></br><br></br><br></br>
+                                                                            <h4>Cargando tabla . . .</h4></div>):(null)
+                                            }
+                                            {(!this.state.isTableLoaded && !this.state.isUsed)?
+                                                (null):(null)
+                                               
                                             }
                                         </Tab>
                                     </Tabs>
