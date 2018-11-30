@@ -4,6 +4,7 @@ import './App.css';
 import Chart from './componentes/chart.js'
 import Fecha from './componentes/fecha.js'
 import BtnExport from './componentes/btn-export';
+import BtnExportProgramas from './componentes/btn-exportProgramas';
 import Tabla from './componentes/tabla';
 import TablaSemestre from './componentes/tablaSemestre';
 import {Tabs, Tab} from 'react-bootstrap-tabs';
@@ -48,7 +49,7 @@ class App extends Component {
             usuario : '', //usado para la sesion del usuario
             listaConceptosEncontrados : "", //usado para saber que conceptos se encontraron en la consulta
             periodo : "I", //usado para seleccionar el periodo del semestre I, II
-            anioSemestre : "2015", //año del semestre
+            anioSemestre : "2018", //año del semestre
             isfechaDisable : false,
             isMesDisable : false,
             isAnioDisable : false,
@@ -816,6 +817,9 @@ class App extends Component {
                                     </div>
                                     <div className="form-group">
                                         {this.state.isTableLoaded ? (<BtnExport tableData={this.state.tableData} tableTitle={this.state.titulo} tableSubtitle={this.state.subtitulo} usuario={this.state.usuario}/>) : (<button className="btn btn-warning btn-block" disabled><b>Imprimir</b></button>)}
+                                    </div>
+                                    <div className="form-group">
+                                        {this.state.isTableProgramasLoaded ? (<BtnExportProgramas tableProgramasData={this.state.tableProgramasData} tableTitle={this.state.titulo} tableSubtitle={this.state.subtitulo} usuario={this.state.usuario}/>) : (<button className="btn btn-warning btn-block" disabled><b>Imprimir programas</b></button>)}
                                     </div>
                                 </form>
                             </div>
