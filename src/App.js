@@ -872,6 +872,12 @@ class App extends Component {
                                             }
                                         </Tab>
                                         <Tab label="Programas">
+                                            <div>
+                                                <br> </br> <br> </br>
+                                                <h2>Universidad Nacional Mayor de San Marcos</h2>
+                                                <h4>Facultad de Ingeniería de Sistemas e Informática</h4>
+                                                <br> </br>
+                                            </div>
                                             {(this.state.isTableProgramasLoaded && this.state.isUsed) ?
                                                 (<TablaSemestre
                                                     tableProgramasData={this.state.tableProgramasData} />)
