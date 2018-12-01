@@ -856,7 +856,7 @@ class App extends Component {
                                                 <h4>Facultad de Ingeniería de Sistemas e Informática</h4>
                                                 <br></br>
                                                 <h5>Reporte por Importes Individuales</h5>
-                                                <br><br/>
+                                                <br></br>
                                                 <img src={logo} style={{width: 100, height: 100, position: 'absolute', top: 70, left:150}}/>
                                             </div>
                                             {(this.state.isTableLoaded && this.state.isUsed) ?
