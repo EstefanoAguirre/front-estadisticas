@@ -828,6 +828,9 @@ class App extends Component {
                                 <div className="form-group">
                                     <Tabs align="center" onSelect={(index, label) => console.log(label + ' selected')}>
                                         <Tab label="Grafica">
+                                            <br></br> <br></br>
+                                            <h2>Universidad Nacional Mayor de San Marcos</h2>
+                                            <br></br>
                                             {(this.state.isChartLoaded && this.state.isUsed) ?
                                                 (<Chart
                                                     chartData={this.state.chartData}
