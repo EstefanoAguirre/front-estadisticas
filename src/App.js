@@ -852,7 +852,7 @@ class App extends Component {
                                             <div>
                                                 <h2>Universidad Nacional Mayor de San Marcos</h2>
                                                 <h3>Facultad de Ingeniería de Sistemas e Informática</h3>
-                                            <div/>
+                                            </div>
                                             {(this.state.isTableLoaded && this.state.isUsed) ?
                                                 (<Tabla
                                                     tableData={this.state.tableData} />)
