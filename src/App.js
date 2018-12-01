@@ -814,7 +814,7 @@ class App extends Component {
                                 <br></br>
                                 <form className="opciones-formulario" onSubmit={this.onClickPreventDefault}>
                                     <div className="form-group">
-                                        {this.state.isConceptsLoaded === true ? (<button type="submit" onClick={this.generarGrafica.bind(this,listaFinal)} className="btn btn-success btn-block"><b>Generar grafica</b></button>):(<button className="btn btn-success btn-block" disabled ><b>Generar grafica</b></button>)}
+                                        {this.state.isConceptsLoaded === true ? (<button type="submit" onClick={this.generarGrafica.bind(this,listaFinal)} className="btn btn-success btn-block"><b>Generar</b></button>):(<button className="btn btn-success btn-block" disabled ><b>Generar</b></button>)}
                                     </div>
                                     <div className="form-group">
                                         {this.state.isTableLoaded ? (<BtnExport tableData={this.state.tableData} tableTitle={this.state.titulo} tableSubtitle={this.state.subtitulo} usuario={this.state.usuario}/>) : (<button className="btn btn-warning btn-block" disabled><b>Imprimir</b></button>)}
@@ -878,6 +878,7 @@ class App extends Component {
                                                 <h2>Universidad Nacional Mayor de San Marcos</h2>
                                                 <h4>Facultad de Ingeniería de Sistemas e Informática</h4>
                                                 <br></br>
+                                                <h5>REPORTE DE PROGRAMAS POR SEMESTRE</h5>
                                                 <img src={logo} style={{width: 100, height: 100, position: 'absolute', top: 70, left:150}}/>
                                             </div>
                                             {(this.state.isTableProgramasLoaded && this.state.isUsed) ?
