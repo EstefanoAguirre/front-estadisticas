@@ -12,6 +12,7 @@ import ToolTipPosition from "./componentes/ToolTipPositions";
 import SelectGrafica from "./componentes/selectForGrafica";
 import SelectYear from "./componentes/selectYear";
 import SelectMonth from "./componentes/selectMonth";
+import logo from './logo.jpg';
 
 class App extends Component {
 
@@ -850,11 +851,11 @@ class App extends Component {
                                         </Tab>
                                         <Tab label="Tabla">
                                             <div>
-                                                <br> </br> <br> </br>
+                                                <br></br> <br></br>
                                                 <h2>Universidad Nacional Mayor de San Marcos</h2>
                                                 <h4>Facultad de Ingeniería de Sistemas e Informática</h4>
-                                                <br> </br>
-                                                <img src="logo.jpg" style={{width: 100, height: 100, position: 'absolute', top: 70, left:150}}/>
+                                                <br></br>
+                                                <img src={logo} style={{width: 100, height: 100, position: 'absolute', top: 70, left:150}}/>
                                             </div>
                                             {(this.state.isTableLoaded && this.state.isUsed) ?
                                                 (<Tabla
@@ -873,10 +874,11 @@ class App extends Component {
                                         </Tab>
                                         <Tab label="Programas">
                                             <div>
-                                                <br> </br> <br> </br>
+                                                <br></br> <br></br>
                                                 <h2>Universidad Nacional Mayor de San Marcos</h2>
                                                 <h4>Facultad de Ingeniería de Sistemas e Informática</h4>
-                                                <br> </br>
+                                                <br></br>
+                                                <img src={logo} style={{width: 100, height: 100, position: 'absolute', top: 70, left:150}}/>
                                             </div>
                                             {(this.state.isTableProgramasLoaded && this.state.isUsed) ?
                                                 (<TablaSemestre
