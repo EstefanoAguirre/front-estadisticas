@@ -850,8 +850,11 @@ class App extends Component {
                                         </Tab>
                                         <Tab label="Tabla">
                                             <div>
+                                                <br> <br>
                                                 <h2>Universidad Nacional Mayor de San Marcos</h2>
-                                                <h3>Facultad de Ingeniería de Sistemas e Informática</h3>
+                                                <h4>Facultad de Ingeniería de Sistemas e Informática</h4>
+                                                <br>
+                                                <img src="logo.jpg" style={{width: 100, height: 100, position: 'absolute', top: 70, left:150}}/>
                                             </div>
                                             {(this.state.isTableLoaded && this.state.isUsed) ?
                                                 (<Tabla
